@@ -95,6 +95,8 @@
         
         var starIndex = 0;
         var starTimer = 0;
+        
+        var distanceToSun = 100;
 
         function update() {
             var minY = window.innerHeight * 0.7;
@@ -128,7 +130,7 @@
             targetY = minY - (minY - maxY) * currentRocketBoost;
             rocket.x = window.innerWidth/2;
             rocket.y -= (rocket.y - targetY) * game.time.elapsed/1000 * 3;
-            
+            distanceToSun -= (1.0 + currentRocketBoost * 3) * game.time.elapsed/1000;
             starTimer += (1.0 + currentRocketBoost * 3) * game.time.elapsed/1000;
             if(starTimer > 0.1) {
                 stars[starIndex].visible = false;
@@ -140,8 +142,9 @@
         }
         
         function render () {
+            game.debug.text("distance to the sun: " + Math.round(distanceToSun) + "k km", 10, 20)
         	for (var i = 0; i < players.length; i++) {
-				game.debug.text('player ' + players[i].id + " boosters: " + players[i].boosters.length + " score: " + players[i].score, 10, 30 + 15*i)
+				game.debug.text('player ' + players[i].id + " score: " + Math.round(players[i].score), 10, 40 + 15*i)
 			}
         }
     };
