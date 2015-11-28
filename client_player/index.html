@@ -24,9 +24,24 @@
         
         socket.emit("spacejunk player", "");
         
-		var rocket;
-        var players = ["-1", "-1", "-1", "-1", "-1"];
 		
+		
+		var rocket;
+        
+		var can;
+		var canCenterOffset = [35, 80];
+		var canDir = [0,0];
+		var canAngle;
+		
+		var slingshot;
+		var posSlingLeft = [85,340];
+		var posSlingRight = [310,355];
+		var posSlingCenter = [posSlingLeft[0] + (posSlingRight[0] - posSlingLeft[0]) / 2, posSlingLeft[1] + (posSlingRight[1] - posSlingLeft[1]) / 2];
+		var slingGraphics;
+		
+		
+		
+		var players = ["-1", "-1", "-1", "-1", "-1"];
 		var myId;
 		
 		socket.on('spacejunk accept', function(msg){
@@ -57,14 +72,62 @@
         function preload () {
             game.load.image('rocket', '../assets/rocket.png');
             game.load.image('can', '../assets/can.png');
+            game.load.image('slingshot', '../assets/slingshot.png');
         }
 
         function create () {
+			console.log("-> Create!!!");
+			
+			// init sprites
+			slingshot = game.add.sprite(0, 0, 'slingshot');
+			
+			can = game.add.sprite(250, 400, 'can');
+			can.inputEnabled = true;
+			can.input.enableDrag();
+			can.events.onDragUpdate.add(dragUpdate);
+			can.events.onDragStop.add(dragStop);
+
+			slingGraphics = game.add.graphics(0, 0);
+			
              // Stretch to fill
             game.scale.fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
-            game.input.onDown.add(gofull, this);
-			game.input.onDown.add(shootRocket, this);
+            //game.input.onDown.add(gofull, this);
+			//game.input.onDown.add(shootRocket, this);
         }
+		
+		function dragUpdate()
+		{
+			drawSlingGraphics();
+		}
+		function dragStop()
+		{
+			slingGraphics.clear();
+		
+			// compute direction of can
+			canDir[0] = slingshot.x + posSlingCenter[0] - (can.x + canCenterOffset[0]);
+			canDir[1] = slingshot.y + posSlingCenter[1] - (can.y + canCenterOffset[1]);
+		
+			// compute angle of can
+			var canDirLength = Math.sqrt(canDir[0] * canDir[0] + canDir[1] * canDir[1]);
+			angle = Math.acos(-canDir[1] / canDirLength) * 180 / Math.PI;
+			if(can.x > slingshot.x + posSlingCenter[0]) angle *= -1;
+			
+			// start animation
+			console.log("animate!! " + angle);
+		}
+		
+		function drawSlingGraphics()
+		{
+			slingGraphics.clear();
+			
+			// set a fill and line style
+			slingGraphics.lineStyle(10, 0xffd900, 1);
+			
+			// draw a shape
+			slingGraphics.moveTo(slingshot.x + posSlingLeft[0], slingshot.y + posSlingLeft[1]);
+			slingGraphics.lineTo(can.x + canCenterOffset[0], can.y + canCenterOffset[1]);
+			slingGraphics.lineTo(slingshot.x + posSlingRight[0], slingshot.y +posSlingRight[1]);
+		}
 		
 		function shootRocket() {
 			socket.emit("spacejunk shootRocket");
@@ -80,9 +143,9 @@
                 game.scale.startFullScreen(false);
             }
         }
-        
-        function update() {
-            
+		
+        function update()
+		{
         }
         
         function render () {
