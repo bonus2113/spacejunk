@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>hello phaser!</title>
+        <script src="../js/phaser.js"></script>
+        <script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font: 13px Helvetica, Arial; }
+            form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+            form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+            form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+            #messages { list-style-type: none; margin: 0; padding: 0; }
+            #messages li { padding: 5px 10px; }
+            #messages li:nth-child(odd) { background: #eee; }
+        </style>
+    </head>
+    <body>
+    </body>
+    <script type="text/javascript">
+
+    window.onload = function() {
+        var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update, render: render });
+        var connectionOptions =  {
+            "force new connection" : true,
+            "reconnectionAttempts": "Infinity", //avoid having user reconnect manually in order to prevent dead clients after a server restart
+            "timeout" : 10000, //before connect_error and connect_timeout are emitted.
+            "transports" : ["websocket"]
+        };
+        var socket = io("localhost:8080", connectionOptions);
+        
+        socket.on('chat message', function(msg){
+            $('#messages').append($('<li>').text(msg));
+        });
+        
+        socket.on('disconnect', function(msg){
+            $('#messages').append($('<li>').text("disconnected"));
+            socket.close();
+        });
+        
+        function preload () {
+            game.load.image('logo', 'phaser.png');
+        }
+
+        function create () {
+            var logo = game.add.sprite(game.world.centerX, game.world.centerY, 'logo');
+            logo.anchor.setTo(0.5, 0.5);
+            
+             // Stretch to fill
+            game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
+            game.input.onDown.add(gofull, this);
+        }
+        
+        function gofull() {
+            if (game.scale.isFullScreen)
+            {
+                game.scale.stopFullScreen();
+            }
+            else
+            {
+                game.scale.startFullScreen(false);
+            }
+        }
+        
+        function update() {
+
+        }
+        
+        function render () {
+        
+            // game.debug.text('Click / Tap to go fullscreen', 270, 16);
+            // game.debug.text('Click / Tap to go fullscreen', 0, 16);
+        
+            //game.debug.inputInfo(32, 32);
+            // game.debug.pointer(game.input.activePointer);
+        
+        }
+    };
+
+    </script>
+
+    </body>
+</html>
