@@ -49,6 +49,8 @@
 		var posSlingCenter = [posSlingLeft[0] + (posSlingRight[0] - posSlingLeft[0]) / 2, posSlingLeft[1] + (posSlingRight[1] - posSlingLeft[1]) / 2];
 		var slingGraphics;
 		
+		var targetGraphics;
+		
 		var shooting = false;
 		
 		
@@ -74,7 +76,7 @@
         });
         
         socket.on('spacejunk shootPlayer', function(msg){
-			console.log(msg);
+			if(msg == myId) console.log("incoming");
         });
         
         socket.on('disconnect', function(msg) {
@@ -85,6 +87,7 @@
             game.load.image('rocket', '../assets/rocket.png');
             game.load.image('can', '../assets/can.png');
             game.load.image('slingshot', '../assets/slingshot.png');
+            game.load.image('ui', '../assets/player_ui.png');
             game.load.image('bg', '../assets/bg/player.png');
         }
 
@@ -105,6 +108,11 @@
 
 			slingGraphics = game.add.graphics(0, 0);
 			
+			
+			ui = game.add.sprite(0, 0, 'ui');
+			ui.scale.x = ui.scale.y = bg.width / ui.width;
+			targetGraphics = game.add.graphics(0, 0);
+			
              // Stretch to fill
             game.scale.fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
             //game.input.onDown.add(gofull, this);
@@ -113,8 +121,11 @@
 		
 		function dragUpdate()
 		{
-			calcDirAngle();
 			drawSlingGraphics();
+			
+			calcDirAngle();
+			calcTarget();
+			drawTargetLine();
 		}
 		function dragStop()
 		{
@@ -140,6 +151,9 @@
 			
 			game.add.tween(can.scale).to({ x: 0.1, y: 0.1} , time * 0.7, Phaser.Easing.Linear.None, true);
 			shooting = true;
+			
+			
+			shootAtTargetId();
 		}
 		
 		function canAnimationComplete()
@@ -184,19 +198,25 @@
 					shootAtPlayerNum(4);
 				}
 			}
+			else
+			{
+				targetId = -1;
+			}
 		}
 		
 		function shootAtPlayerNum(targetNum)
 		{
 			targetId = 0;
+			if(myId == 0) targetId = 1;
 			for(var i = 1; i < targetNum; i++)
 			{	
 				if(myId == i) targetId++;
 				targetId++;
 			}
-			
-			
-			console.log("targeting " + targetId);
+		}
+		
+		function shootAtTargetId()
+		{
 			socket.emit("spacejunk shootPlayer", targetId+"");
 		}
 		
@@ -211,6 +231,22 @@
 			slingGraphics.moveTo(slingshot.x + posSlingLeft[0], slingshot.y + posSlingLeft[1]);
 			slingGraphics.lineTo(can.x + canCenterOffset[0], can.y + canCenterOffset[1]);
 			slingGraphics.lineTo(slingshot.x + posSlingRight[0], slingshot.y +posSlingRight[1]);
+		}
+		
+		function drawTargetLine()
+		{
+			targetGraphics.clear();
+			
+			// set a fill and line style
+			targetGraphics.lineStyle(3, 0x333333, 1);
+			
+			// draw a shape
+			targetGraphics.moveTo(can.x, can.y);
+			targetGraphics.lineTo(can.x + canCenterOffset[0], can.y + canCenterOffset[1]);
+			
+			if(targetId == -1) targetGraphics.lineTo(window.innerWidth / 2, 20);
+			
+			console.log(targetId);
 		}
 		
 		function shootRocket() {
