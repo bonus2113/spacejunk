@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>hello phaser!</title>
+        <script src="../js/phaser.js"></script>
+        <script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    </head>
+    <body>
+    </body>
+    <script type="text/javascript">
+
+    window.onload = function() {
+        var game = new Phaser.Game(window.outerWidth, window.outerHeight, Phaser.AUTO, '', { preload: preload, create: create, update: update, render: render });
+        var connectionOptions =  {
+            "force new connection" : true,
+            "reconnectionAttempts": "Infinity", //avoid having user reconnect manually in order to prevent dead clients after a server restart
+            "timeout" : 10000, //before connect_error and connect_timeout are emitted.
+            "transports" : ["websocket"]
+        };
+        var socket = io("localhost:8080", connectionOptions);
+        
+		var rocket;
+        var players = ["-1", "-1", "-1", "-1", "-1"];
+		
+		var myId;
+		
+		socket.on('spacejunk accept', function(msg){
+            myId = msg;
+			players[myId] = "me";
+        });
+        
+        socket.on('spacejunk newPlayer', function(msg){
+			if(msg != myId) {
+	            players[msg] = "joined";
+			}
+        });
+        
+        socket.on('spacejunk playerLeft', function(msg){
+			if(msg != myId) {
+	            players[msg] = "left";
+			}
+        });
+        
+        socket.on('spacejunk getHit', function(msg){
+
+        });
+        
+        socket.on('disconnect', function(msg) {
+            socket.close();
+        });
+        
+        function preload () {
+            game.load.image('rocket', '../assets/rocket.png');
+            game.load.image('can', '../assets/can.png');
+        }
+
+        function create () {
+             // Stretch to fill
+            game.scale.fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
+            game.input.onDown.add(gofull, this);
+			game.input.onDown.add(shootRocket, this);
+        }
+		
+		function shootRocket() {
+			socket.emit("spacejunk shootRocket");
+		}
+        
+        function gofull() {
+            if (game.scale.isFullScreen)
+            {
+                game.scale.stopFullScreen();
+            }
+            else
+            {
+                game.scale.startFullScreen(false);
+            }
+        }
+        
+        function update() {
+            
+        }
+        
+        function render () {
+        
+            game.debug.text('My ID: ' + myId, 10, 15);
+			for (var i = 0; i < players.length; i++) {
+				game.debug.text('player ' + players[i], 10, 30 + 15*i)
+			}
+            //game.debug.text('Click / Tap to go fullscreen', 0, 16);
+        
+            //game.debug.inputInfo(32, 32);
+            // game.debug.pointer(game.input.activePointer);
+        
+        }
+    };
+
+    </script>
+
+    </body>
+</html>

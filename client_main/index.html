@@ -22,7 +22,7 @@
     <script type="text/javascript">
 
     window.onload = function() {
-        var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update, render: render });
+        var game = new Phaser.Game(window.outerWidth, window.outerHeight, Phaser.AUTO, '', { preload: preload, create: create, update: update, render: render });
         var connectionOptions =  {
             "force new connection" : true,
             "reconnectionAttempts": "Infinity", //avoid having user reconnect manually in order to prevent dead clients after a server restart
@@ -31,8 +31,16 @@
         };
         var socket = io("localhost:8080", connectionOptions);
         
-        socket.on('chat message', function(msg){
-            $('#messages').append($('<li>').text(msg));
+        var currentRocketBoost = 0;
+        
+        var players = [];
+        
+        socket.on('spacejunk newPlayer', function(msg){
+            players.push(msg);
+        });
+        
+        socket.on('spacejunk addBoost', function(msg){
+            currentRocketBoost += 0.1;
         });
         
         socket.on('disconnect', function(msg){
@@ -42,14 +50,18 @@
         
         function preload () {
             game.load.image('logo', 'phaser.png');
+            game.load.image('rocket', '../assets/rocket.png');
+            game.load.image('can', '../assets/can.png');
         }
-
+       
+        var rocket;
+     
         function create () {
-            var logo = game.add.sprite(game.world.centerX, game.world.centerY, 'logo');
-            logo.anchor.setTo(0.5, 0.5);
+            rocket = game.add.sprite(window.outerWidth/2, window.outerHeight/2, 'rocket');
+            rocket.anchor.setTo(0.5, 0.5);
             
              // Stretch to fill
-            game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
+            game.scale.fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
             game.input.onDown.add(gofull, this);
         }
         
@@ -64,8 +76,11 @@
             }
         }
         
+        var minY = window.outerHeight * 0.75;
+        var maxY = window.outerHeight * 0.25;
+        
         function update() {
-
+            rocket.y = minY + maxY * currentRocketBoost;
         }
         
         function render () {
