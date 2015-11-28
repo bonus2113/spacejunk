@@ -20,7 +20,7 @@
             "transports" : ["websocket"]
         };
         
-        var socket = io("localhost:8080", connectionOptions);
+        var socket = io("http://52.32.152.75:8080", connectionOptions);
         
         socket.emit("spacejunk player", "");
         
@@ -61,7 +61,7 @@
 			}
         });
         
-        socket.on('spacejunk getHit', function(msg){
+        socket.on('spacejunk shootPlayer', function(msg){
 
         });
         
@@ -92,7 +92,7 @@
              // Stretch to fill
             game.scale.fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
             //game.input.onDown.add(gofull, this);
-			//game.input.onDown.add(shootRocket, this);
+			game.input.onDown.add(shootRocket, this);
         }
 		
 		function dragUpdate()
@@ -130,7 +130,7 @@
 		}
 		
 		function shootRocket() {
-			socket.emit("spacejunk shootRocket");
+			socket.emit("spacejunk shootRocket", myId+"");
 		}
         
         function gofull() {
