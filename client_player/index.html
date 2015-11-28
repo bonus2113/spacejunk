@@ -19,7 +19,10 @@
             "timeout" : 10000, //before connect_error and connect_timeout are emitted.
             "transports" : ["websocket"]
         };
+        
         var socket = io("localhost:8080", connectionOptions);
+        
+        socket.emit("spacejunk player", "");
         
 		var rocket;
         var players = ["-1", "-1", "-1", "-1", "-1"];

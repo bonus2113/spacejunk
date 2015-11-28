@@ -29,22 +29,26 @@
             "timeout" : 10000, //before connect_error and connect_timeout are emitted.
             "transports" : ["websocket"]
         };
-        var socket = io("localhost:8080", connectionOptions);
         
+        var socket = io("localhost:8080", connectionOptions);
+
         var currentRocketBoost = 0;
         
-        var players = [];
+        var players = ["-1", "-1", "-1", "-1", "-1"];
         
         socket.on('spacejunk newPlayer', function(msg){
-            players.push(msg);
+			if(msg != myId) {
+	            players[msg] = "joined";
+			}
         });
         
-        socket.on('spacejunk addBoost', function(msg){
-            currentRocketBoost += 0.1;
+        socket.on('spacejunk playerLeft', function(msg){
+			if(msg != myId) {
+	            players[msg] = "left";
+			}
         });
         
-        socket.on('disconnect', function(msg){
-            $('#messages').append($('<li>').text("disconnected"));
+        socket.on('disconnect', function(msg) {
             socket.close();
         });
         
