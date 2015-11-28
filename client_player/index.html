@@ -27,17 +27,29 @@
 		
 		
 		var rocket;
+		var animTime = 1000;
         
+		// can
 		var can;
-		var canCenterOffset = [35, 80];
+		var canInitPos = [140, 500];
+		var canCenterOffset = [0, 0];
 		var canDir = [0,0];
+		var canDirLength = 0;
 		var canAngle;
+		
+		// player angles
+		var angleRocket = 20;
+		var anglePlayer = 40;
+		var angleMiss = 60;
+		var targetId = -1;
 		
 		var slingshot;
 		var posSlingLeft = [85,340];
 		var posSlingRight = [310,355];
 		var posSlingCenter = [posSlingLeft[0] + (posSlingRight[0] - posSlingLeft[0]) / 2, posSlingLeft[1] + (posSlingRight[1] - posSlingLeft[1]) / 2];
 		var slingGraphics;
+		
+		var shooting = false;
 		
 		
 		
@@ -62,7 +74,7 @@
         });
         
         socket.on('spacejunk shootPlayer', function(msg){
-
+			console.log(msg);
         });
         
         socket.on('disconnect', function(msg) {
@@ -73,15 +85,19 @@
             game.load.image('rocket', '../assets/rocket.png');
             game.load.image('can', '../assets/can.png');
             game.load.image('slingshot', '../assets/slingshot.png');
+            game.load.image('bg', '../assets/bg/player.png');
         }
 
         function create () {
 			console.log("-> Create!!!");
 			
 			// init sprites
-			slingshot = game.add.sprite(0, 0, 'slingshot');
+			bg = game.add.sprite(0, 0, 'bg');
+			bg.scale.x = bg.scale.y = window.innerHeight / bg.height;
+			slingshot = game.add.sprite(-40, 0, 'slingshot');
 			
-			can = game.add.sprite(250, 400, 'can');
+			can = game.add.sprite(canInitPos[0], canInitPos[1], 'can');
+			can.anchor.setTo(0.5, 0.5);
 			can.inputEnabled = true;
 			can.input.enableDrag();
 			can.events.onDragUpdate.add(dragUpdate);
@@ -97,23 +113,91 @@
 		
 		function dragUpdate()
 		{
+			calcDirAngle();
 			drawSlingGraphics();
 		}
 		function dragStop()
 		{
+			// CALCS
 			slingGraphics.clear();
+			calcDirAngle();
+			
+			// target player
+			calcTarget();
+			
+			// ANIMATE - TWEENS
+			var time = animTime;
+			var tween1 = game.add.tween(can).to({x:230, y:100}, time * 0.5, Phaser.Easing.Exponential.Out);
+			var tween2 = game.add.tween(can).to({x:235, y:100}, time * 0.1, Phaser.Easing.Linear.None);
+			var tween3 = game.add.tween(can).to({x:240, y:130}, time * 0.3, Phaser.Easing.Linear.None);
+			var tween4 = game.add.tween(can).to({x:242, y:140}, time * 0.1, Phaser.Easing.Linear.None);
+			tween4.onComplete.add(canAnimationComplete, this);
+			
+			tween1.chain(tween2);
+			tween2.chain(tween3);
+			tween3.chain(tween4);
+			tween1.start();
+			
+			game.add.tween(can.scale).to({ x: 0.1, y: 0.1} , time * 0.7, Phaser.Easing.Linear.None, true);
+			shooting = true;
+		}
 		
+		function canAnimationComplete()
+		{
+			can.x = canInitPos[0];
+			can.y = canInitPos[1];
+			can.scale.x = can.scale.y = 1;
+			shooting = false;
+		}
+		
+		function calcDirAngle()
+		{
 			// compute direction of can
 			canDir[0] = slingshot.x + posSlingCenter[0] - (can.x + canCenterOffset[0]);
 			canDir[1] = slingshot.y + posSlingCenter[1] - (can.y + canCenterOffset[1]);
 		
 			// compute angle of can
-			var canDirLength = Math.sqrt(canDir[0] * canDir[0] + canDir[1] * canDir[1]);
+			canDirLength = Math.sqrt(canDir[0] * canDir[0] + canDir[1] * canDir[1]);
 			angle = Math.acos(-canDir[1] / canDirLength) * 180 / Math.PI;
 			if(can.x > slingshot.x + posSlingCenter[0]) angle *= -1;
+		}
+		
+		function calcTarget()
+		{
+			if(Math.abs(angle) < angleRocket)
+			{
+				shootRocket();
+			}else if(Math.abs(angle) < anglePlayer)
+			{	
+				if(angle > 0){
+					shootAtPlayerNum(1);
+				}else
+				{
+					shootAtPlayerNum(3);
+				}
+			}else if(Math.abs(angle) < angleMiss)
+			{
+				if(angle > 0){
+					shootAtPlayerNum(2);
+				}else
+				{
+					shootAtPlayerNum(4);
+				}
+			}
+		}
+		
+		function shootAtPlayerNum(targetNum)
+		{
+			targetId = 0;
+			for(var i = 1; i < targetNum; i++)
+			{	
+				if(myId == i) targetId++;
+				targetId++;
+			}
 			
-			// start animation
-			console.log("animate!! " + angle);
+			
+			console.log("targeting " + targetId);
+			socket.emit("spacejunk shootPlayer", targetId+"");
 		}
 		
 		function drawSlingGraphics()
@@ -146,6 +230,7 @@
 		
         function update()
 		{
+			if(!shooting) drawSlingGraphics();
         }
         
         function render () {
