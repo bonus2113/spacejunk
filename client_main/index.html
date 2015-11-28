@@ -35,14 +35,28 @@
         
         var currentRocketBoost = 0;
         
-        var players = ["-1", "-1", "-1", "-1", "-1"];
+        function booster(player) {
+            boosterSprite = game.add.sprite(0, 0, 'booster');
+            return { lifetime: 10, sprite: boosterSprite }
+        }
+        
+        function player(id) {
+            return { id: id, boosters: [], score: 0};
+        }
+        
+        var players = [player(-1), player(-1), player(-1), player(-1), player(-1)];
         
         socket.on('spacejunk newPlayer', function(msg){
-            players[msg] = "joined";
+            players[msg] = player(msg);
         });
         
         socket.on('spacejunk playerLeft', function(msg){
-            players[msg] = "left";
+            players[msg] = player(-1);
+        });
+        
+        socket.on('spacejunk shootRocket', function(msg){
+            console.log(msg);
+            players[msg].boosters.push(booster(msg));
         });
         
         socket.on('disconnect', function(msg) {
@@ -67,31 +81,30 @@
         }
         
         function gofull() {
-            if (game.scale.isFullScreen)
-            {
-                game.scale.stopFullScreen();
-            }
-            else
-            {
-                game.scale.startFullScreen(false);
-            }
+            game.scale.startFullScreen(false);
         }
         
         var minY = window.outerHeight * 0.75;
         var maxY = window.outerHeight * 0.25;
         
+        
         function update() {
-            rocket.y = minY + maxY * currentRocketBoost;
+            var totalActiveBoosters = 0;
+            for(var i = 0; i < 5; i++) {
+                totalActiveBoosters += players[i].boosters.length;
+                players[i].score += players[i].boosters.length * game.time.elapsed/1000;
+            }
+            
+            currentRocketBoost = totalActiveBoosters / 15.0;
+            currentRocketBoost = currentRocketBoost < 0 ? 0 : currentRocketBoost > 1 ? 1 : currentRocketBoost;
+            
+            rocket.y = minY - (minY - maxY) * currentRocketBoost;
         }
         
         function render () {
-        
-            // game.debug.text('Click / Tap to go fullscreen', 270, 16);
-            // game.debug.text('Click / Tap to go fullscreen', 0, 16);
-        
-            //game.debug.inputInfo(32, 32);
-            // game.debug.pointer(game.input.activePointer);
-        
+        	for (var i = 0; i < players.length; i++) {
+				game.debug.text('player ' + players[i].id + " boosters: " + players[i].boosters.length + " score: " + players[i].score, 10, 30 + 15*i)
+			}
         }
     };
 

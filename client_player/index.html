@@ -46,7 +46,7 @@
 			}
         });
         
-        socket.on('spacejunk getHit', function(msg){
+        socket.on('spacejunk shootPlayer', function(msg){
 
         });
         
@@ -62,12 +62,12 @@
         function create () {
              // Stretch to fill
             game.scale.fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
-            game.input.onDown.add(gofull, this);
+            //game.input.onDown.add(gofull, this);
 			game.input.onDown.add(shootRocket, this);
         }
 		
 		function shootRocket() {
-			socket.emit("spacejunk shootRocket");
+			socket.emit("spacejunk shootRocket", myId+"");
 		}
         
         function gofull() {
